@@ -38,13 +38,6 @@ def iterative_sampling_loop(
     config: dict,
     save_all_scores: bool = False
 ) -> None:
-    """
-    Infinite loop, runs until orchestrator kills it:
-      1) Sample n molecules
-      2) Score them
-      3) Merge with previous top x, deduplicate, sort, select top x
-      4) Write top x to file (overwrite) each iteration
-    """
     n_samples = config["num_molecules"] * 5
 
     top_pool = pd.DataFrame(columns=["name", "smiles", "InChIKey", "score"])
@@ -130,7 +123,6 @@ def iterative_sampling_loop(
         except Exception:
             pass
 
-        # Merge, deduplicate, sort and take top x
         top_pool = pd.concat([top_pool, batch_scores])
         top_pool = top_pool.drop_duplicates(subset=["InChIKey"], keep="first")
         top_pool = top_pool.sort_values(by="score", ascending=False)
