@@ -43,7 +43,13 @@ def iterative_sampling_loop(
     config: dict,
     save_all_scores: bool = False
 ) -> None:
-    
+    """
+    Infinite loop, runs until orchestrator kills it:
+      1) Sample n molecules
+      2) Score them
+      3) Merge with previous top x, deduplicate, sort, select top x
+      4) Write top x to file (overwrite) each iteration
+    """
     target_models = []
     antitarget_models = []
 
@@ -168,6 +174,7 @@ def iterative_sampling_loop(
         top_pool = top_pool.sort_values(by="score", ascending=False)
         top_pool = top_pool.head(config["num_molecules"])
 
+        # Leave the true elites
         elite_names = top_pool["name"].tolist()
 
         # write to file
@@ -180,15 +187,11 @@ def iterative_sampling_loop(
             f"[Miner] Wrote {config['num_molecules']} top molecules to {output_path}")
         bt.logging.info(f"[Miner] Average score: {top_pool['score'].mean()}")
 
-
 def calculate_final_scores(score_dict: dict,
                            sampler_data: dict,
                            config: dict,
                            save_all_scores: bool = True,
                            current_epoch: int = 0) -> pd.DataFrame:
-    """
-    Calculate final scores per molecule
-    """
 
     names = sampler_data["molecules"]
     smiles = sampler_data["smiles"]
@@ -245,7 +248,6 @@ def calculate_final_scores(score_dict: dict,
 
     return batch_scores
 
-
 def main(config: dict):
     iterative_sampling_loop(
         db_path=DB_PATH,
@@ -254,7 +256,6 @@ def main(config: dict):
         config=config,
         save_all_scores=False,
     )
-
 
 if __name__ == "__main__":
     config = get_config()
